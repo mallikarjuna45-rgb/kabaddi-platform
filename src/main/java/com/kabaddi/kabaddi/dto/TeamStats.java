@@ -1,18 +1,17 @@
 package com.kabaddi.kabaddi.dto;
 
-import com.kabaddi.kabaddi.util.PointType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @Builder
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateScoreDto {
-    private String teamName;
+public class TeamStats{
     private String playerId;
-    private PointType pointType;
-    private Integer points;
+    private String playerName;
+    private Integer raidPoints;
+    private Integer tacklePoints;
 }

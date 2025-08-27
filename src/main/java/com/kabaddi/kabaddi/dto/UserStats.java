@@ -5,16 +5,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserProfile {
+public class UserStats {
     private String userId;
-    private String name;
-    private String username;
-    private String password;
     private Integer raidPoints;
-    private Integer defencePoints;
-    private String url;
+    private Integer totalPoints;
+    private Integer tacklePoints;
+    private Integer totalMatches;
+    private LocalDate debutMatch;
+    private List<UserMatch> matches;
 }

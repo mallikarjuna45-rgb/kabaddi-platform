@@ -18,16 +18,17 @@ import java.util.List;
 public class CreateMatchRequest {
     @NotBlank(message = "match name required")
     private String matchName;
-    @NotBlank(message = "team name required")
+    @NotBlank(message = "team 1 name required")
     private String team1Name;
     @NotBlank(message = "team name required")
     private String team2Name;
 
-    @NotNull(message = "Team 1 photo is required")
+   // @NotNull(message = "Team 1 photo is required")
     private MultipartFile team1Photo;
 
-    @NotNull(message = "Team 2 photo is required")
+    //@NotNull(message = "Team 2 photo is required")
     private MultipartFile team2Photo;
+
     @NotBlank(message = "owner required")
     private String createdBy;
     @NotNull(message = "Team 1 players list must not be empty")

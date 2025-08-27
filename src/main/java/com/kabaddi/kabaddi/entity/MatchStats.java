@@ -19,5 +19,5 @@ public class MatchStats {
     private String playerId;
     private String teamName;
     private Integer raidPoints;
-    private Integer defencePoints;
+    private Integer tacklePoints;
 }

@@ -1,16 +1,20 @@
 package com.kabaddi.kabaddi.service;
 
+import com.kabaddi.kabaddi.dto.MatchDto;
 import com.kabaddi.kabaddi.dto.RequestUserDto;
 import com.kabaddi.kabaddi.dto.UserDto;
-import com.kabaddi.kabaddi.dto.UserProfile;
+import com.kabaddi.kabaddi.dto.UserStats;
 import com.kabaddi.kabaddi.entity.User;
 import com.kabaddi.kabaddi.exception.FileUploadException;
 import com.kabaddi.kabaddi.exception.NotfoundException;
 import com.kabaddi.kabaddi.repository.UserRepository;
+import com.kabaddi.kabaddi.util.PlayerResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,9 +24,11 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private final MatchStatsService matchStatsService;
+
     private final ImageUploadService imageUploadService;
 
-    private final MatchStatsService matchStatsService;
+    private final MatchService matchService;
 
     public UserDto createUser(RequestUserDto requestUserDto) {
         try {
@@ -38,7 +44,14 @@ public class UserService {
                     .name(requestUserDto.getName())
                     .username(requestUserDto.getUsername())
                     .password(requestUserDto.getPassword())
+                    .location(requestUserDto.getLocation())
+                    .phone(requestUserDto.getPhone())
                     .url(imageUrl)
+                    .createdAt(LocalDate.now())
+                    .about(requestUserDto.getAbout() == null ? " " : requestUserDto.getAbout())
+                    .height(requestUserDto.getHeight() == null ? 0 : requestUserDto.getHeight())
+                    .weight(requestUserDto.getWeight() == null ? 0 : requestUserDto.getWeight())
+                    .age(requestUserDto.getAge() == null ? 0 : requestUserDto.getAge())
                     .build();
 
             userRepository.save(user);
@@ -49,10 +62,15 @@ public class UserService {
         }
     }
 
-    public List<UserDto> getAllUsers() {
+    public List<PlayerResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
-        List<UserDto> userDtos = new ArrayList<>();
-        users.forEach(user -> userDtos.add(convertToUserDto(user)));
+        List<PlayerResponse> userDtos = new ArrayList<>();
+        for(User user : users){
+            PlayerResponse playerResponse = new PlayerResponse();
+            playerResponse.setPlayerId(user.getId());
+            playerResponse.setPlayerName(user.getUsername());
+            userDtos.add(playerResponse);
+        }
         return userDtos;
     }
 
@@ -61,7 +79,6 @@ public class UserService {
             // Find existing user by id or throw if not found
             User existingUser = userRepository.findById(id)
                     .orElseThrow(() -> new NotfoundException("User not found with id: " + id));
-
             // Check if username is changing and already used by someone else
             if (!existingUser.getUsername().equals(requestUserDto.getUsername()) &&
                     userRepository.existsByUsername(requestUserDto.getUsername())) {
@@ -77,8 +94,13 @@ public class UserService {
             existingUser.setName(requestUserDto.getName());
             existingUser.setUsername(requestUserDto.getUsername());
             existingUser.setPassword(requestUserDto.getPassword());
+            existingUser.setAbout(requestUserDto.getAbout());
+            existingUser.setHeight(requestUserDto.getHeight());
+            existingUser.setWeight(requestUserDto.getWeight());
+            existingUser.setPhone(requestUserDto.getPhone());
+            existingUser.setLocation(requestUserDto.getLocation());
             existingUser.setUrl(imageUrl);
-
+            existingUser.setAge(requestUserDto.getAge());
             userRepository.save(existingUser);
 
             return convertToUserDto(existingUser);
@@ -92,17 +114,6 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotfoundException("User not found with id: " + id));
         return convertToUserDto(user);
-    }
-    public UserProfile getProfile(String userId) {
-        UserDto user = getUserById(userId);
-        return UserProfile.builder()
-                .userId(user.getId())
-                .name(user.getName())
-                .password(user.getPassword())
-                .url(user.getUrl())
-                .raidPoints(matchStatsService.getUserRaidPoints(userId))
-                .defencePoints(matchStatsService.getUserDefenceoints(userId))
-                .build();
     }
 
 
@@ -136,15 +147,13 @@ public class UserService {
                 .url(user.getUrl())
                 .username(user.getUsername())
                 .password(user.getPassword())
-                .build();
-    }
-    public User convertToUser(UserDto userDto) {
-        return User.builder()
-                .id(userDto.getId())
-                .name(userDto.getName())
-                .url(userDto.getUrl())
-                .username(userDto.getUsername())
-                .password(userDto.getPassword())
+                .weight(user.getWeight())
+                .about(user.getAbout())
+                .height(user.getHeight())
+                .phone(user.getPhone())
+                .location(user.getLocation())
+                .age(user.getAge())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 
@@ -155,6 +164,15 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    public UserStats getUserProfile(String userId) {
+       return matchStatsService.getUserStats(userId);
+    }
 
+    public List<MatchDto> getMatchesByUserId(String userId) {
+        return matchStatsService.getMatchesPlayedByUser(userId);
+    }
 
+    public List<MatchDto> getCreatedMatchesByUserId(String userId) {
+        return matchService.getCreatedMatchesByUserId(userId);
+    }
 }

@@ -13,11 +13,11 @@ public class MatchWebSocketBroadcaster {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void sendScoreUpdate(String matchId, Object payload) {
-        log.info("Broadcasting to /topic/match/{} payload: {}", matchId, payload);
+        //log.info("Broadcasting to /topic/match/{} payload: {}", matchId, payload);
         messagingTemplate.convertAndSend("/topic/match/" + matchId, payload);
     }
     public void sendUserScoreUpdate(String userId, Object payload) {
-        log.info("Broadcasting to /topic/user/{}/score payload: {}", userId, payload);
+        //log.info("Broadcasting to /topic/user/{}/score payload: {}", userId, payload);
         messagingTemplate.convertAndSend("/topic/user/" + userId + "/score", payload);
     }
 

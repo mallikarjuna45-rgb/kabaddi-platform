@@ -19,4 +19,8 @@ public interface MatchStatsRepository extends MongoRepository<MatchStats,String>
     MatchStats findByMatchIdAndPlayerId(String matchId, String playerId);
 
     List<MatchStats> findByPlayerId(String playerId);
+
+    MatchStats findFirstByPlayerIdOrderByMatchIdAsc(String playerId);
+
+    List<MatchStats> findTop5ByPlayerIdOrderByMatchIdDesc(String playerId);
 }

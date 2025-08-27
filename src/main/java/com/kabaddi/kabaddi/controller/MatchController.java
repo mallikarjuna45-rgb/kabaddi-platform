@@ -1,6 +1,7 @@
 package com.kabaddi.kabaddi.controller;
 
 import com.kabaddi.kabaddi.dto.CreateMatchRequest;
+import com.kabaddi.kabaddi.dto.LiveScorerCard;
 import com.kabaddi.kabaddi.dto.MatchDto;
 import com.kabaddi.kabaddi.service.MatchService;
 import com.kabaddi.kabaddi.util.WebSocketEvent;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/match")
+@RequestMapping("/matches")
 @RequiredArgsConstructor
 public class MatchController {
 
@@ -28,16 +29,16 @@ public class MatchController {
     public ResponseEntity<List<MatchDto>> getAllMatches(){
         return ResponseEntity.ok(matchService.getAllMatches());
     }
-    @GetMapping("/all/live")
+    @GetMapping("/live")
     public ResponseEntity<List<MatchDto>> getAllLiveMatches(){
         return ResponseEntity.ok(matchService.getAllLiveMatches());
     }
-    @GetMapping("/all/completed")
+    @GetMapping("/completed")
     public List<MatchDto> getAllCompletedMatches(){
         return matchService.getAllCompletedMatches();
     }
 
-    @GetMapping("/{matchId}")
+    @GetMapping("/match/{matchId}")
     public ResponseEntity<MatchDto> getMatchById(@PathVariable String matchId){
         return ResponseEntity.ok(matchService.getMatchById(matchId));
     }
@@ -48,55 +49,55 @@ public class MatchController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/update/{matchId}/{userId}")
+    @PutMapping("/match/update/{matchId}/{createrId}")
     public ResponseEntity<MatchDto> updateMatchById(
             @PathVariable String matchId,
-            @PathVariable String userId,
+            @PathVariable String createrId,
             @Valid @ModelAttribute CreateMatchRequest createMatchRequest
     ) {
-        MatchDto updatedMatch = matchService.updateMatchById(matchId, userId, createMatchRequest);
-        messagingTemplate.convertAndSend(
-                "/topic/match/" + matchId,
-                new WebSocketEvent("MATCH_UPDATED", matchId, updatedMatch)
-        );
+        MatchDto updatedMatch = matchService.updateMatchById(matchId, createrId, createMatchRequest);
         return ResponseEntity.ok(updatedMatch);
     }
 
-    @PutMapping("/start/{matchId}/{userId}")
-    public ResponseEntity<MatchDto> startMatch(@PathVariable String matchId, @PathVariable String userId) {
-        messagingTemplate.convertAndSend(
-                "/topic/match/" + matchId,
-                new WebSocketEvent("MATCH_STARTED", matchId)
-        );
-        return ResponseEntity.ok(matchService.startMatch(matchId, userId));
+    @PutMapping("match/{setType}/{matchId}/{createrId}")
+    public ResponseEntity<MatchDto> setMatch(@PathVariable String setType, @PathVariable String matchId, @PathVariable String createrId) {
+//        messagingTemplate.convertAndSend(
+//                "/topic/match/" + matchId,
+//                new WebSocketEvent("MATCH_STARTED", matchId)
+//        );
+        return ResponseEntity.ok(matchService.setMatch(setType,matchId, createrId));
+    }
+    @GetMapping("/match/{matchId}/liveScorerCard/{createrId}")
+    public ResponseEntity<LiveScorerCard> getMatchLiveScorerCard(@PathVariable String matchId,@PathVariable String createrId){
+        return ResponseEntity.ok(matchService.getLiveScorerCard(matchId,createrId));
     }
 
-    @PutMapping("/pause/{matchId}/{userId}")
-    public ResponseEntity<MatchDto> pauseMatch(@PathVariable String matchId, @PathVariable String userId) {
-        messagingTemplate.convertAndSend(
-                "/topic/match/" + matchId,
-                new WebSocketEvent("MATCH_PAUSED", matchId)
-        );
-        return ResponseEntity.ok(matchService.pauseMatch(matchId, userId));
-    }
-
-    @PutMapping("/resume/{matchId}/{userId}")
-    public ResponseEntity<MatchDto> resumeMatch(@PathVariable String matchId, @PathVariable String userId) {
-        messagingTemplate.convertAndSend(
-                "/topic/match/" + matchId,
-                new WebSocketEvent("MATCH_RESUMED", matchId)
-        );
-        return ResponseEntity.ok(matchService.resumeMatch(matchId, userId));
-    }
-
-    @PutMapping("/end/{matchId}/{userId}")
-    public ResponseEntity<MatchDto> endMatch(@PathVariable String matchId, @PathVariable String userId) {
-        messagingTemplate.convertAndSend(
-                "/topic/match/" + matchId,
-                new WebSocketEvent("MATCH_ENDED", matchId)
-        );
-        return ResponseEntity.ok(matchService.endMatch(matchId, userId));
-    }
+//    @PutMapping("/pause/{matchId}/{userId}")
+//    public ResponseEntity<MatchDto> pauseMatch(@PathVariable String matchId, @PathVariable String userId) {
+//        messagingTemplate.convertAndSend(
+//                "/topic/match/" + matchId,
+//                new WebSocketEvent("MATCH_PAUSED", matchId)
+//        );
+//        return ResponseEntity.ok(matchService.pauseMatch(matchId, userId));
+//    }
+//
+//    @PutMapping("/resume/{matchId}/{userId}")
+//    public ResponseEntity<MatchDto> resumeMatch(@PathVariable String matchId, @PathVariable String userId) {
+//        messagingTemplate.convertAndSend(
+//                "/topic/match/" + matchId,
+//                new WebSocketEvent("MATCH_RESUMED", matchId)
+//        );
+//        return ResponseEntity.ok(matchService.resumeMatch(matchId, userId));
+//    }
+//
+//    @PutMapping("/end/{matchId}/{userId}")
+//    public ResponseEntity<MatchDto> endMatch(@PathVariable String matchId, @PathVariable String userId) {
+//        messagingTemplate.convertAndSend(
+//                "/topic/match/" + matchId,
+//                new WebSocketEvent("MATCH_ENDED", matchId)
+//        );
+//        return ResponseEntity.ok(matchService.endMatch(matchId, userId));
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<List<MatchDto>> searchByMatchName(@RequestParam String matchName) {

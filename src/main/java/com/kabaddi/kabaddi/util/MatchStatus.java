@@ -1,7 +1,7 @@
 package com.kabaddi.kabaddi.util;
 
 public enum MatchStatus {
-    SCHEDULED,
+    UPCOMING,
     LIVE,
     COMPLETED,
     PAUSED

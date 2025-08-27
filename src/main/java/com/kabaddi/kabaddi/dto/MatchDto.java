@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,13 +22,16 @@ public class MatchDto {
 
     private String team2Name;
 
+    private Integer team1Score;
+    private Integer team2Score;
+
     private String team1PhotoUrl;
 
     private String team2PhotoUrl;
 
     private MatchStatus status;
 
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     private String createdBy;
 

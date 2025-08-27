@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +24,11 @@ public class User {
     private String username;
     private String password;
     private String url;
+    private String phone;
+    private String location;
+    private String about;
+    private Float height;
+    private Float weight;
+    private Integer age;
+    private LocalDate createdAt;
 }

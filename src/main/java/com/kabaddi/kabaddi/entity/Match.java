@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(collection = "matches")
@@ -23,12 +24,14 @@ public class Match {
     private String matchName;
     private String team1Name;
     private String team2Name;
+    private Integer team1Score;
+    private Integer team2Score;
     private String team1PhotoUrl;
     private String team2PhotoUrl;
 
-    private MatchStatus status; // SCHEDULED, LIVE, PAUSED,COMPLETED
+    private MatchStatus status; // UPCOMING, LIVE, PAUSED,COMPLETED
 
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
     private String createdBy;
 
     private Integer totalDuration;
@@ -38,7 +41,6 @@ public class Match {
     private LocalDateTime pauseTime;
 
     private String location;
-    private String matchStats;
 
 }
 
