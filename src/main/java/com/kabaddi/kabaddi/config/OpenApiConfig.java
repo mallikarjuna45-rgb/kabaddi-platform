@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
                 version = "1.0",
                 description = "API documentation for the Kabaddi application.",
                 contact = @Contact(
-                        name = "Mallikarjuna",
+                        name = "Sajjarao Mallikarjuna",
                         email = "smallikarjun@713@gmail.com"
                 ),
                 license = @License(
