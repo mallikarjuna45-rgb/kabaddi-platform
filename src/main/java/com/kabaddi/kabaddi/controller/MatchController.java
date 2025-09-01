@@ -4,11 +4,13 @@ import com.kabaddi.kabaddi.dto.CreateMatchRequest;
 import com.kabaddi.kabaddi.dto.LiveScorerCard;
 import com.kabaddi.kabaddi.dto.MatchDto;
 import com.kabaddi.kabaddi.service.MatchService;
+import com.kabaddi.kabaddi.service.MatchStatsService;
 import com.kabaddi.kabaddi.util.WebSocketEvent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,8 @@ public class MatchController {
 
     private final MatchService matchService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MatchStatsService matchStatsService;
+
     @PostMapping("/create")
     public ResponseEntity<MatchDto> createMach(@Valid @ModelAttribute CreateMatchRequest createMatchRequest) {
         return ResponseEntity.ok(matchService.createMatch(createMatchRequest));
@@ -46,6 +50,7 @@ public class MatchController {
     @DeleteMapping("/delete/{matchId}")
     public ResponseEntity<Void> deleteMatchById(@PathVariable String matchId){
         matchService.deleteById(matchId);
+        //matchStatsService.deleteMatchStatsByMatchId(matchId);
         return ResponseEntity.noContent().build();
     }
 
@@ -59,18 +64,15 @@ public class MatchController {
         return ResponseEntity.ok(updatedMatch);
     }
 
-    @PutMapping("match/{setType}/{matchId}/{createrId}")
+    @PutMapping("/match/{setType}/{matchId}/{createrId}")
     public ResponseEntity<MatchDto> setMatch(@PathVariable String setType, @PathVariable String matchId, @PathVariable String createrId) {
-//        messagingTemplate.convertAndSend(
-//                "/topic/match/" + matchId,
-//                new WebSocketEvent("MATCH_STARTED", matchId)
-//        );
+
         return ResponseEntity.ok(matchService.setMatch(setType,matchId, createrId));
     }
-    @GetMapping("/match/{matchId}/liveScorerCard/{createrId}")
-    public ResponseEntity<LiveScorerCard> getMatchLiveScorerCard(@PathVariable String matchId,@PathVariable String createrId){
-        return ResponseEntity.ok(matchService.getLiveScorerCard(matchId,createrId));
-    }
+//    @GetMapping("/match/{matchId}/liveScorerCard/{createrId}")
+//    public ResponseEntity<LiveScorerCard> getMatchLiveScorerCard(@PathVariable String matchId,@PathVariable String createrId){
+//        return ResponseEntity.ok(matchService.getLiveScorerCard(matchId,createrId));
+//    }
 
 //    @PutMapping("/pause/{matchId}/{userId}")
 //    public ResponseEntity<MatchDto> pauseMatch(@PathVariable String matchId, @PathVariable String userId) {

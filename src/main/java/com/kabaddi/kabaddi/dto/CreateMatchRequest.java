@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 
@@ -38,9 +39,9 @@ public class CreateMatchRequest {
     @NotNull(message = "Team 2 players list must not be empty")
     @Size(min = 7, max = 7, message = "Team 2 must have exactly unique 7 players")
     private HashSet<String> team2Players;
-
+    private LocalDate matchDate;
     @NotNull(message = "Total duration is required")
-    @Min(value = 15, message = "Total duration must be at least 15 minutes")
+    @Min(value = 4, message = "Total duration must be at least 15 minutes")
     @Max(value = 60, message = "Total duration cannot exceed 60 minutes")
     private Integer totalDuration;
     @NotBlank(message="location required for searching")

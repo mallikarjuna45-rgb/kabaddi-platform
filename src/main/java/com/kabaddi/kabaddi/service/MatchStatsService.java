@@ -1,26 +1,20 @@
 package com.kabaddi.kabaddi.service;
-import com.kabaddi.kabaddi.config.MatchWebSocketBroadcaster;
 import com.kabaddi.kabaddi.dto.*;
-import com.kabaddi.kabaddi.entity.Match;
+
 import com.kabaddi.kabaddi.entity.MatchStats;
 import com.kabaddi.kabaddi.entity.User;
 import com.kabaddi.kabaddi.exception.NotfoundException;
 import com.kabaddi.kabaddi.repository.MatchStatsRepository;
 import com.kabaddi.kabaddi.repository.UserRepository;
 import com.kabaddi.kabaddi.util.MatchStatus;
-import com.kabaddi.kabaddi.util.PlayerResponse;
 import com.kabaddi.kabaddi.util.PointType;
-import com.kabaddi.kabaddi.util.WebSocketEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +23,6 @@ public class MatchStatsService {
     private final MatchService matchService;
     private final MatchStatsRepository  matchStatsRepository;
     private final UserRepository userRepository;
-    private final MatchWebSocketBroadcaster webSocketBroadcaster;
-  //  private final UserService userService;
 
 //    public SummaryCard getSummaryCard(String matchId) {
 //        MatchDto matchDto = matchService.getMatchById(matchId);
@@ -54,6 +46,63 @@ public class MatchStatsService {
     public ScoreCard getMatchScorecard(String matchId) {
         MatchDto matchDto = matchService.getMatchById(matchId);
         List<MatchStats> matchStats = matchStatsRepository.findByMatchId(matchId);
+        ScoreCard scoreCard = new ScoreCard();
+        scoreCard.setMatchId(matchId);
+        scoreCard.setMatchName(matchDto.getMatchName());
+        scoreCard.setTeam1Name(matchDto.getTeam1Name());
+        scoreCard.setTeam2Name(matchDto.getTeam2Name());
+        scoreCard.setLocation(matchDto.getLocation());
+        scoreCard.setCreatedBy(matchDto.getCreatedBy());
+        scoreCard.setCreatedAt(matchDto.getCreatedAt());
+        scoreCard.setStatus(matchDto.getStatus());
+        scoreCard.setCreatorName(matchDto.getCreatorName());
+        scoreCard.setRemainingDuration(matchDto.getRemainingDuration());
+        List<TeamStats> team1Stats = new ArrayList<>();
+        List<TeamStats> team2Stats = new ArrayList<>();
+        for (MatchStats stats : matchStats) {
+            if(stats.getTeamName().equals(matchDto.getTeam1Name())){
+                String name = userRepository.findById(stats.getPlayerId())
+                        .orElseThrow(() -> new NotfoundException("User not found with id: " + stats.getPlayerId()))
+                        .getName();
+
+                TeamStats teamStats = TeamStats.builder()
+                        .playerId(stats.getPlayerId())
+                        .playerName(name)
+                        .raidPoints(stats.getRaidPoints())
+                        .tacklePoints(stats.getTacklePoints())
+                        .build();
+                team1Stats.add(teamStats);
+            }
+            else if(stats.getTeamName().equals(matchDto.getTeam2Name())){
+                String name = userRepository.findById(stats.getPlayerId())
+                        .orElseThrow(() -> new NotfoundException("User not found with id: " + stats.getPlayerId()))
+                        .getName();
+                TeamStats teamStats = TeamStats.builder()
+                        .playerId(stats.getPlayerId())
+                        .playerName(name)
+                        .raidPoints(stats.getRaidPoints())
+                        .tacklePoints(stats.getTacklePoints())
+                        .build();
+                team2Stats.add(teamStats);
+            }
+            scoreCard.setTeam1(team1Stats);
+            scoreCard.setTeam2(team2Stats);
+
+        }
+        log.info("scoreCards: {}", scoreCard);
+        return scoreCard;
+    }
+    public ScoreCard getMatchScorecard(String matchId,String createrId) {
+        log.info("getLiveMatchScorecard");
+        log.info("matchId: {}, createrId: {}", matchId, createrId);
+        MatchDto matchDto = matchService.getMatchById(matchId);
+        //if(matchDto.getStatus().equals(MatchStatus.COMPLETED)){throw new NotfoundException("Match already completed ,view ScoreCard ");}
+        log.info("no errors were found while searching for{}",matchId);
+        if(!matchDto.getCreatedBy().equals(createrId)){
+            throw new NotfoundException("Only the Match Creater Can doo the Live-Updating Scorecard");
+        }
+        List<MatchStats> matchStats = matchStatsRepository.findByMatchId(matchId);
+        log.info("recorede matchStats: {}", matchStats);
         ScoreCard scoreCard = new ScoreCard();
         scoreCard.setMatchId(matchId);
         scoreCard.setMatchName(matchDto.getMatchName());
@@ -103,6 +152,9 @@ public class MatchStatsService {
     public MatchDto updateMatchstats(String createrId,String matchId, String playerId, PointType type, Integer points,String teamName) {
         MatchStats stat = matchStatsRepository.findByMatchIdAndPlayerId(matchId, playerId);
         matchService.getMatchIfCreator(matchId, createrId);
+        if(matchService.getMatchById(matchId).getRemainingDuration()<=0){
+            throw new NotfoundException("match Duration Completed");
+        }
         if(stat == null){
             throw new NotfoundException("User not Found");
         }
@@ -110,8 +162,14 @@ public class MatchStatsService {
             throw new NotfoundException("Match Status Not Live ");
         }
         if (type == PointType.RAID_POINT) {
+            if(points <0 && stat.getRaidPoints() < -1*points){
+                throw new NotfoundException("Raid points for user cant be negative");
+            }
             stat.setRaidPoints(stat.getRaidPoints() + points);
         } else {
+            if(points <0 && stat.getTacklePoints()< -1*points){
+                throw new NotfoundException("Raid points for user cant be negative");
+            }
             stat.setTacklePoints(stat.getTacklePoints() + points);
         }
         matchStatsRepository.save(stat);
@@ -136,6 +194,7 @@ public class MatchStatsService {
     }
 
     public Integer getUserRaidPoints(String  playerId) {
+        log.info("raid points received player id " + playerId);
         List<MatchStats> playerPoints = matchStatsRepository.findByPlayerId(playerId);
         int totalScore = 0;
         for (MatchStats stats : playerPoints) {
@@ -143,9 +202,11 @@ public class MatchStatsService {
                 totalScore += stats.getRaidPoints();
             }
         }
+        log.info("total score: {}", totalScore);
         return totalScore;
     }
     public Integer getUserDefenceoints(String  playerId) {
+        log.info("defence points received player id " + playerId);
         List<MatchStats> playerPoints = matchStatsRepository.findByPlayerId(playerId);
         int totalScore = 0;
         for (MatchStats stats : playerPoints) {
@@ -153,19 +214,23 @@ public class MatchStatsService {
                 totalScore += stats.getTacklePoints();
             }
         }
+        log.info("total score: {}", totalScore);
         return totalScore;
     }
 
     public Integer getTotalMatchesPlayedByUser(String userId) {
+        log.info("total matches played by user id {}", userId);
         return matchStatsRepository.findByPlayerId(userId).size();
     }
 
     public LocalDate  getDebutMatch(String userId) {
         MatchStats debutMatch = matchStatsRepository.findFirstByPlayerIdOrderByMatchIdAsc(userId);
 //        if(debutMatch == null){ throw new NotfoundException("To see stats you have to pal"); }
+        log.info("debutMatch: {}", debutMatch);
         if (debutMatch == null) {
             return null;
         }
+        log.info("debutMatch: {}", debutMatch.getMatchId());
         MatchDto matchDto = matchService.getMatchById(debutMatch.getMatchId());
     return matchDto.getCreatedAt();
     }
@@ -176,7 +241,10 @@ public class MatchStatsService {
         for (MatchStats stats : matchStats) {
             UserMatch userMatch = new UserMatch();
             userMatch.setMatchId(stats.getMatchId());
+            log.info("finding match Details of : {}", stats.getMatchId());
+            if(!matchService.existsById(stats.getMatchId())) continue;
             MatchDto matchDto = matchService.getMatchById(stats.getMatchId());
+            if(! (matchDto.getStatus() == MatchStatus.COMPLETED)) continue;
             String oppositeTeam = matchDto.getTeam1Name().equals(stats.getTeamName())? matchDto.getTeam2Name():matchDto.getTeam1Name() ;
             userMatch.setOppositeTeamName(oppositeTeam);
             userMatch.setLocation(matchDto.getLocation());
@@ -205,14 +273,24 @@ public class MatchStatsService {
 
     public List<MatchDto> getMatchesPlayedByUser(String playerId) {
         List<MatchStats>stats = matchStatsRepository.findByPlayerId(playerId);
+        log.info("stats: {}", stats);
         List<MatchDto> matchDtos = new ArrayList<>();
         if(stats==null){ throw new NotfoundException("No Matches found"); }
         for (MatchStats stat : stats) {
-            MatchDto matchDto = matchService.getMatchById(stat.getMatchId());
-            matchDtos.add(matchDto);
+            log.info("stats: {}", stat.getMatchId());
+            if(matchService.existsById(stat.getMatchId())) {
+
+                log.info("Match Exists: {}", stat.getMatchId());
+                MatchDto matchDto = matchService.getMatchById(stat.getMatchId());
+                log.info("matchDto: {}", matchDto);
+                matchDtos.add(matchDto);
+            }
         }
+        log.info("matchDtos: {}", matchDtos);
         return matchDtos;
     }
-
+    public void deleteMatchStatsByMatchId(String matchId) {
+        matchStatsRepository.deleteByMatchId(matchId);
+    }
 
 }

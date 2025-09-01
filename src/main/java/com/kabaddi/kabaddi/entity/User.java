@@ -1,6 +1,7 @@
 package com.kabaddi.kabaddi.entity;
 
 
+import com.kabaddi.kabaddi.util.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,4 +32,5 @@ public class User {
     private Float weight;
     private Integer age;
     private LocalDate createdAt;
+    private UserRole userRole;
 }

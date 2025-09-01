@@ -44,7 +44,9 @@ public class MatchService {
             log.info("user does not exist for creating match " + request.getCreatedBy());
             throw new NotfoundException("User not found");
         }
+
         try {
+            log.info("creating match ");
             String team1 = null;
             if(request.getTeam1Photo() != null)team1 =imageUploadService.uploadImage(request.getTeam1Photo());
             String team2 = null;
@@ -53,6 +55,7 @@ public class MatchService {
             if(request.getTeam1Name().equals(request.getTeam2Name())){
                 throw new NotfoundException("Teams name should be different");
             }
+            log.info("creating match ");
             Match new_match = Match.builder()
                         .matchName(request.getMatchName())
                         .team1Name(request.getTeam1Name())
@@ -61,27 +64,34 @@ public class MatchService {
                         .team2PhotoUrl(team2)
                         .createdBy(request.getCreatedBy())
                         .status(MatchStatus.UPCOMING)
+                    .createdAt(request.getMatchDate())
                         .team1Score(0)
                         .team2Score(0)
                         .createdAt(LocalDate.now())
                         .totalDuration(request.getTotalDuration() * 60)
+                    //.remainingDuration(0)
                         .location(request.getLocation())
                         .build();
+            log.info("saving match ");
                 matchRepository.save(new_match);
-
-            // creating match_stats
+            log.info("created match successfully ");
+            log.info("match stats creating");
             for (String playerId : request.getTeam1Players()) {
                 MatchStats stats = new MatchStats();
-                if(!userRepository.existsById(playerId)){
-                    matchRepository.deleteById(new_match.getId());
-                    throw new NotfoundException("Player not found");
+                log.info("creating matchstats for user  " + playerId);
+                if(userRepository.existsById(playerId)){
+                    stats.setMatchId(new_match.getId());
+                    stats.setPlayerId(playerId);
+                    stats.setTeamName(request.getTeam1Name());
+                    stats.setRaidPoints(0);
+                    stats.setTacklePoints(0);
+                    matchStatsRepository.save(stats);
                 }
-                stats.setMatchId(new_match.getId());
-                stats.setPlayerId(playerId);
-                stats.setTeamName(request.getTeam1Name());
-                stats.setRaidPoints(0);
-                stats.setTacklePoints(0);
-                matchStatsRepository.save(stats);
+                else {
+                    matchRepository.deleteById(new_match.getId());
+                    throw new NotfoundException("Player not found " + playerId);
+                }
+
             }
             for (String playerId : request.getTeam2Players()) {
                 MatchStats stats = new MatchStats();
@@ -89,7 +99,7 @@ public class MatchService {
                     matchRepository.deleteById(new_match.getId());
                     throw new NotfoundException("Player with id " + playerId + " already exists in " + request.getTeam1Name());
                 }
-                if(!userRepository.existsById(playerId)) throw new NotfoundException("Player not found");
+                if(!userRepository.existsById(playerId)) throw new NotfoundException("Player not found" + playerId);
                 stats.setMatchId(new_match.getId());
                 stats.setPlayerId(playerId);
                 stats.setTeamName(request.getTeam2Name());
@@ -129,13 +139,14 @@ public class MatchService {
         return dtos;
     }
     public MatchDto getMatchById(String matchId) {
+        log.info("getting match id " + matchId);
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new NotfoundException("Match not found"));
         return convertToDto(match);
     }
 
     public void deleteById(String matchId) {
-        if(matchRepository.findById(matchId).isEmpty()){
+        if(matchRepository.findById(matchId).isEmpty()) {
             throw new NotfoundException("Match not found");
         }
         matchRepository.deleteById(matchId);
@@ -213,8 +224,11 @@ public class MatchService {
         }
 
         match.setStatus(MatchStatus.LIVE);
+        log.info("before start time "+ match.getStartTime());
+        log.info("after start time "+ LocalDateTime.now());
         match.setStartTime(LocalDateTime.now());
         match.setRemainingDuration(match.getTotalDuration());
+        log.info(""+match.getTotalDuration());
         matchRepository.save(match);
         return convertToDto(match);
     }
@@ -225,12 +239,15 @@ public class MatchService {
         if (match.getStatus() != MatchStatus.LIVE) {
             throw new NotfoundException("Match is not live");
         }
-
+        log.info("before pause time"+LocalDateTime.now());
         long elapsed = java.time.Duration.between(match.getStartTime(), LocalDateTime.now()).getSeconds();
+        log.info(""+elapsed);
         match.setRemainingDuration(match.getRemainingDuration() - (int) elapsed);
         match.setPauseTime(LocalDateTime.now());
         match.setStatus(MatchStatus.PAUSED);
+
         matchRepository.save(match);
+        log.info(""+match.getRemainingDuration());
         return convertToDto(match);
     }
 
@@ -242,6 +259,7 @@ public class MatchService {
         }
 
         match.setStartTime(LocalDateTime.now());
+        log.info("before resume time"+LocalDateTime.now());
         match.setStatus(MatchStatus.LIVE);
         matchRepository.save(match);
         return convertToDto(match);
@@ -300,9 +318,11 @@ public class MatchService {
         }
         if (match.getStatus() == MatchStatus.LIVE && match.getStartTime() != null) {
             long elapsed = java.time.Duration.between(match.getStartTime(), LocalDateTime.now()).getSeconds();
+            log.info(""+elapsed);
             remaining = Math.max(0, remaining - (int) elapsed);
+            log.info(""+remaining);
         }
-
+        User user = userRepository.findById(match.getCreatedBy()).get();
 
         return MatchDto.builder()
                 .id(match.getId())
@@ -319,15 +339,23 @@ public class MatchService {
                 .Location(match.getLocation())
                 .team1Score(match.getTeam1Score())
                 .team2Score(match.getTeam2Score())
+                .creatorName(user.getUsername())
                 .build();
     }
 
     public MatchDto updateTeamScore(String matchId,String teamName,Integer score) {
         Match match = matchRepository.findById(matchId).orElseThrow(() -> new NotfoundException("Match not found"));
         if(teamName.equals(match.getTeam1Name())){
+            if(score<0 && match.getTeam1Score() < -1*score){
+                throw new NotfoundException("Team 1 score cannot be negative");
+            }
             match.setTeam1Score(match.getTeam1Score()+score);
         }
         if(teamName.equals(match.getTeam2Name())){
+            if(score<0 && match.getTeam2Score() < -1*score){
+                throw new NotfoundException("Team 2 score cannot be negative");
+            }
+            log.info("Updating team score to {}",score);
             match.setTeam2Score(match.getTeam2Score()+score);
         }
         return convertToDto(matchRepository.save(match));
@@ -398,5 +426,9 @@ public class MatchService {
             playerResponseList.add(playerResponse);
         }
         return playerResponseList;
+    }
+
+    public boolean existsById(String matchId) {
+        return matchRepository.existsById(matchId);
     }
 }

@@ -38,6 +38,6 @@ public class MatchDto {
     private Integer totalDuration;
 
     private Integer remainingDuration;
-
+    private String creatorName;
     private String Location;
 }

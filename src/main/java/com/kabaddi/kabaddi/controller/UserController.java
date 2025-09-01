@@ -9,6 +9,7 @@ import com.kabaddi.kabaddi.util.PlayerResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/users")
 @Tag(name = "User - Controller", description = "manages users")
+@Slf4j
 public class UserController {
     private final MatchWebSocketBroadcaster webSocketBroadcaster;
 
@@ -36,11 +38,16 @@ public class UserController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<UserDto> getUserById(@PathVariable String userId){
+        return ResponseEntity.ok(userService.getUserDetailsById(userId));
+    }
+    @GetMapping("/userdetails/{userId}")
+    public ResponseEntity<UserDto> getUserDetailsById(@PathVariable String userId){
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @PutMapping("/user/update/{userId}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @Valid @ModelAttribute RequestUserDto requestUserDto){
+    public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @Valid @ModelAttribute UpdateRequestUserDto requestUserDto){
+        log.info(requestUserDto.toString());
         return ResponseEntity.ok(userService.updateUser(userId,requestUserDto));
     }
 
@@ -52,6 +59,7 @@ public class UserController {
 
     @GetMapping("/user/{playerId}/profile")
     public ResponseEntity<UserStats> getUserProfile(@PathVariable String playerId){
+        log.info("received player id " + playerId);
         return ResponseEntity.ok(userService.getUserProfile(playerId));
     }
     @GetMapping("/user/{userId}/played-matches")
@@ -60,6 +68,7 @@ public class UserController {
     }
     @GetMapping("/user/{userId}/created-matches")
     public ResponseEntity<List<MatchDto>> getCreatedMatchesByUserId(@PathVariable String userId) {
+        log.info("created-matches " + userId);
         return ResponseEntity.ok(userService.getCreatedMatchesByUserId(userId));
     }
 

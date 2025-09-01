@@ -17,7 +17,7 @@ public class RequestUserDto {
     @NotBlank(message = "username is required")
     private String username;
     @NotBlank(message = "password required")
-    @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
+    @Size(min = 8, message = "Password must be between 8 and 20 characters")
     @Pattern(
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$",
             message = "Password must contain at least one digit, one lowercase, one uppercase letter, and one special character"
@@ -31,9 +31,9 @@ public class RequestUserDto {
 
     @NotBlank(message = "Location cannot be blank")
     private String location;
-    @Size(max = 30)
+    @Size(max = 150)
     private String about;
-    @Max(value = 10,message = " Cant greater than 10")
+    @Max(value = 300,message = " Cant greater than 300")
     @Min(value = 0,message = "cant less than 0")
     private Float height;
     @Min(value=0,message = "must be greater than 0")

@@ -1,16 +1,19 @@
 package com.kabaddi.kabaddi.service;
 
-import com.kabaddi.kabaddi.dto.MatchDto;
-import com.kabaddi.kabaddi.dto.RequestUserDto;
-import com.kabaddi.kabaddi.dto.UserDto;
-import com.kabaddi.kabaddi.dto.UserStats;
+import com.kabaddi.kabaddi.dto.*;
 import com.kabaddi.kabaddi.entity.User;
 import com.kabaddi.kabaddi.exception.FileUploadException;
 import com.kabaddi.kabaddi.exception.NotfoundException;
+import com.kabaddi.kabaddi.repository.MatchRepository;
 import com.kabaddi.kabaddi.repository.UserRepository;
 import com.kabaddi.kabaddi.util.PlayerResponse;
+import com.kabaddi.kabaddi.util.UserRole;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -18,9 +21,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+   // private PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     private final UserRepository userRepository;
 
@@ -29,6 +35,9 @@ public class UserService {
     private final ImageUploadService imageUploadService;
 
     private final MatchService matchService;
+
+    private final PasswordEncoder passwordEncoder;
+    private final MatchRepository matchRepository;
 
     public UserDto createUser(RequestUserDto requestUserDto) {
         try {
@@ -43,7 +52,7 @@ public class UserService {
             User user = User.builder()
                     .name(requestUserDto.getName())
                     .username(requestUserDto.getUsername())
-                    .password(requestUserDto.getPassword())
+                    .password(passwordEncoder.encode(requestUserDto.getPassword()))
                     .location(requestUserDto.getLocation())
                     .phone(requestUserDto.getPhone())
                     .url(imageUrl)
@@ -52,6 +61,7 @@ public class UserService {
                     .height(requestUserDto.getHeight() == null ? 0 : requestUserDto.getHeight())
                     .weight(requestUserDto.getWeight() == null ? 0 : requestUserDto.getWeight())
                     .age(requestUserDto.getAge() == null ? 0 : requestUserDto.getAge())
+                    .userRole(UserRole.USER)
                     .build();
 
             userRepository.save(user);
@@ -74,7 +84,7 @@ public class UserService {
         return userDtos;
     }
 
-    public UserDto updateUser(String id, RequestUserDto requestUserDto) {
+    public UserDto updateUser(String id, UpdateRequestUserDto requestUserDto) {
         try {
             // Find existing user by id or throw if not found
             User existingUser = userRepository.findById(id)
@@ -93,7 +103,10 @@ public class UserService {
             // Update fields
             existingUser.setName(requestUserDto.getName());
             existingUser.setUsername(requestUserDto.getUsername());
-            existingUser.setPassword(requestUserDto.getPassword());
+            if (requestUserDto.getPassword() != null && !requestUserDto.getPassword().isEmpty()) {
+                log.info("Password : "+requestUserDto.getPassword());
+                existingUser.setPassword(passwordEncoder.encode(requestUserDto.getPassword()));
+            }
             existingUser.setAbout(requestUserDto.getAbout());
             existingUser.setHeight(requestUserDto.getHeight());
             existingUser.setWeight(requestUserDto.getWeight());
@@ -165,6 +178,7 @@ public class UserService {
     }
 
     public UserStats getUserProfile(String userId) {
+        log.info("received player id " + userId);
        return matchStatsService.getUserStats(userId);
     }
 
@@ -174,5 +188,17 @@ public class UserService {
 
     public List<MatchDto> getCreatedMatchesByUserId(String userId) {
         return matchService.getCreatedMatchesByUserId(userId);
+    }
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> new NotfoundException("User not found with username: " + username));
+    }
+
+    public UserDto getUserDetailsById(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotfoundException("User not found with id: " + userId));
+        UserDto userDto = convertToUserDto(user);
+        userDto.setPassword("");
+        return userDto;
     }
 }

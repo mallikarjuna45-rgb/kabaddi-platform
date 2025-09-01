@@ -22,6 +22,7 @@ public class ScoreCard {
     private String location;
     private LocalDate createdAt;
     private String createdBy;
+    private String creatorName;
     private MatchStatus status;
     private Integer remainingDuration;
     private List<TeamStats> team1;
