@@ -8,6 +8,7 @@ import com.kabaddi.kabaddi.exception.NotfoundException;
 import com.kabaddi.kabaddi.repository.UserRepository;
 import com.kabaddi.kabaddi.service.MatchStatsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.List;
 
 
 
+@Slf4j
 @RestController
 @RequestMapping("/matchstats")
 @RequiredArgsConstructor
@@ -27,11 +29,13 @@ public class MatchStatsController {
 
     @GetMapping("/match/scorecard/{matchId}")
     public ResponseEntity<ScoreCard> MatchScorecard(@PathVariable String matchId) {
+        log.info("exceuting MatchScorecard");
         return ResponseEntity.ok(matchStatsService.getMatchScorecard(matchId));
     }
     @GetMapping("/match/livescorecard/{matchId}/user")
     public ResponseEntity<ScoreCard> LiveMatchScorecard(@PathVariable String matchId, Principal
             principal) {
+        log.info("Executing LiveMatchScorecard");
         String username = principal.getName();
         User user = userRepository.findByUsername(username).orElseThrow(() -> new NotfoundException(username));
         String userId = user.getId();
@@ -41,6 +45,7 @@ public class MatchStatsController {
 
     @PutMapping("/match/{matchId}/update/{createrId}")
     public ResponseEntity<MatchDto> updateMatchStats(@PathVariable String createrId,@PathVariable String matchId, @RequestBody UpdateScoreDto updateScoreDto) {
+        log.info(" Received data matchId: {}, score: {}", matchId, updateScoreDto);
         return ResponseEntity.ok(matchStatsService.updateMatchstats(createrId,matchId,updateScoreDto.getPlayerId(),updateScoreDto.getPointType(),updateScoreDto.getPoints(),updateScoreDto.getTeamName()));
     }
 //    @PutMapping("/update/{matchId}/undo/{createrId}")

@@ -59,7 +59,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // frontend URL
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));// frontend URL
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // important for cookies, authorization headers with credentials
@@ -81,6 +81,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         // Allow Swagger UI and API docs
                         .requestMatchers(
+                                "commentary/match/{matchId}",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -88,6 +89,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         // Allow specific user-related endpoints
                         .requestMatchers("/users/user/{userId}", "/users/user/{playerId}/profile").permitAll()
                         // Allow specific match-related endpoints

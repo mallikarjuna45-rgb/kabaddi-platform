@@ -1,8 +1,6 @@
 package com.kabaddi.kabaddi.service;
 
-import com.kabaddi.kabaddi.dto.CreateMatchRequest;
-import com.kabaddi.kabaddi.dto.LiveScorerCard;
-import com.kabaddi.kabaddi.dto.MatchDto;
+import com.kabaddi.kabaddi.dto.*;
 import com.kabaddi.kabaddi.entity.Match;
 import com.kabaddi.kabaddi.entity.MatchStats;
 import com.kabaddi.kabaddi.entity.User;
@@ -16,6 +14,7 @@ import com.kabaddi.kabaddi.util.PlayerResponse;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +34,9 @@ public class MatchService {
     private final MatchStatsRepository matchStatsRepository;
     private final MatchRepository matchRepository;
     private final ImageUploadService imageUploadService;
-    private final UserRepository userRepository;
+    private final UserRepository userRepository;;
+
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     public MatchDto createMatch(CreateMatchRequest request){
@@ -52,7 +53,7 @@ public class MatchService {
             String team2 = null;
             if(request.getTeam2Photo() != null)team2 = imageUploadService.uploadImage(request.getTeam2Photo());
             userRepository.existsById(request.getCreatedBy());
-            if(request.getTeam1Name().equals(request.getTeam2Name())){
+            if(request.getTeam1Name().trim().equals(request.getTeam2Name().trim())){
                 throw new NotfoundException("Teams name should be different");
             }
             log.info("creating match ");
@@ -309,7 +310,6 @@ public class MatchService {
     }
 
     public MatchDto convertToDto(Match match) {
-        log.info("Converting Match to DTO");
         int remaining = match.getRemainingDuration()==null ?0:match.getRemainingDuration();
         if(remaining<0){
             remaining=0;
@@ -318,9 +318,7 @@ public class MatchService {
         }
         if (match.getStatus() == MatchStatus.LIVE && match.getStartTime() != null) {
             long elapsed = java.time.Duration.between(match.getStartTime(), LocalDateTime.now()).getSeconds();
-            log.info(""+elapsed);
             remaining = Math.max(0, remaining - (int) elapsed);
-            log.info(""+remaining);
         }
         User user = userRepository.findById(match.getCreatedBy()).get();
 
@@ -342,40 +340,79 @@ public class MatchService {
                 .creatorName(user.getUsername())
                 .build();
     }
-
+    @Transactional
     public MatchDto updateTeamScore(String matchId,String teamName,Integer score) {
+        log.info("Starting updateTeamScore");
+        log.info("Before Updating");
+
         Match match = matchRepository.findById(matchId).orElseThrow(() -> new NotfoundException("Match not found"));
+        log.info(" Match Name: " + match.getMatchName());
+        log.info(" Team 1 Score :"+match.getTeam1Score());
+        log.info(" Team 2 Score :"+match.getTeam2Score());
         if(teamName.equals(match.getTeam1Name())){
-            if(score<0 && match.getTeam1Score() < -1*score){
+            if(score<0 && match.getTeam1Score() < (-1*score)){
                 throw new NotfoundException("Team 1 score cannot be negative");
             }
+            log.info("Updating Team 1 {} Score to {}",match.getTeam1Name(),score);
             match.setTeam1Score(match.getTeam1Score()+score);
-        }
-        if(teamName.equals(match.getTeam2Name())){
-            if(score<0 && match.getTeam2Score() < -1*score){
+        } else if(teamName.equals(match.getTeam2Name())){ // Changed to else if
+            if(score<0 && match.getTeam2Score() < (-1*score)){
                 throw new NotfoundException("Team 2 score cannot be negative");
             }
-            log.info("Updating team score to {}",score);
+            log.info("Updating team 2 {} score to {}",match.getTeam2Name(),score);
             match.setTeam2Score(match.getTeam2Score()+score);
+        } else { // Added error handling for invalid team name
+            throw new NotfoundException("Invalid team name provided: " + teamName);
         }
-        return convertToDto(matchRepository.save(match));
+
+        MatchDto updatedMatchDto = convertToDto(matchRepository.save(match));
+
+        log.info("After Updating ");
+        log.info(" Match Name: " + updatedMatchDto.getMatchName());
+        log.info(" Team 1 Score :"+updatedMatchDto.getTeam1Score());
+        log.info(" Team 2 Score :"+updatedMatchDto.getTeam2Score());
+        // Publish update to WebSocket topic for this match
+//        messagingTemplate.convertAndSend("/topic/matches/" + matchId, updatedMatchDto);
+//        log.info("Published score update for match {}: Team1 Score: {}, Team2 Score: {}",
+//                matchId, updatedMatchDto.getTeam1Score(), updatedMatchDto.getTeam2Score());
+        log.info("Completed In updateTeamScore");
+        return updatedMatchDto;
     }
 
     public MatchDto setMatch(String setType, String matchId, String userId) {
+        log.info("Starting setMatch");
+        MatchDto updatedMatchDto;
         if(setType.equals("start")){
-            return startMatch(matchId, userId);
+            updatedMatchDto = startMatch(matchId, userId);
         }
         else if(setType.equals("pause")){
-            return pauseMatch(matchId, userId);
+            updatedMatchDto = pauseMatch(matchId, userId);
         }
         else if(setType.equals("resume")){
-            return resumeMatch(matchId, userId);
+            updatedMatchDto = resumeMatch(matchId, userId);
         }
         else if(setType.equals("end")){
-            return endMatch(matchId, userId);
+            updatedMatchDto = endMatch(matchId, userId);
         }
         else{
-            return null;
+            throw new NotfoundException("Invalid match set type: " + setType); // Handle invalid types
+        }
+        ScoreCard scoreCard = getMatchScorecard(matchId);
+        log.info("score card to websocket",scoreCard);
+        // Publish update to WebSocket topic for this match
+        messagingTemplate.convertAndSend("/topic/matches/" + matchId,scoreCard);
+        log.info("Published match status update for match {}: {}", matchId, updatedMatchDto.getStatus());
+        broadcastMatchUpdate(updatedMatchDto);
+        log.info("Completed setMatch");
+        return updatedMatchDto;
+    }
+
+    public void broadcastMatchUpdate(MatchDto matchDto) {
+        // Only broadcast matches that are not UPCOMING or COMPLETED
+        if (matchDto.getStatus() != MatchStatus.UPCOMING && matchDto.getStatus() != MatchStatus.COMPLETED) {
+            // We'll use a new topic for landing page updates
+            messagingTemplate.convertAndSend("/topic/liveMatchesSummary", matchDto);
+            log.info("Broadcasted live match summary for match {}: {}", matchDto.getId(), matchDto.getStatus());
         }
     }
 
@@ -388,32 +425,64 @@ public class MatchService {
         return matchDtos;
     }
 
-    public LiveScorerCard getLiveScorerCard(String matchId,String createrId) {
-        Match matche = getMatchIfCreator(matchId, createrId);
-        MatchDto match = convertToDto(matche);
-        if(match.getStatus()==MatchStatus.COMPLETED){
-            throw new NotfoundException("Match has already been completed");
+    public ScoreCard getMatchScorecard(String matchId) {
+        log.info("getMatchScorecard for matchId {}", matchId);
+        MatchDto matchDto = getMatchById(matchId);
+        List<MatchStats> matchStats = matchStatsRepository.findByMatchId(matchId);
+        ScoreCard scoreCard = new ScoreCard();
+        scoreCard.setMatchId(matchId);
+        scoreCard.setMatchName(matchDto.getMatchName());
+        scoreCard.setTeam1Name(matchDto.getTeam1Name());
+        scoreCard.setTeam2Name(matchDto.getTeam2Name());
+        scoreCard.setLocation(matchDto.getLocation());
+        scoreCard.setCreatedBy(matchDto.getCreatedBy());
+        scoreCard.setCreatedAt(matchDto.getCreatedAt());
+        scoreCard.setStatus(matchDto.getStatus());
+        scoreCard.setCreatorName(matchDto.getCreatorName());
+        scoreCard.setRemainingDuration(matchDto.getRemainingDuration());
+        List<TeamStats> team1Stats = new ArrayList<>();
+        List<TeamStats> team2Stats = new ArrayList<>();
+        scoreCard.setTeam1PhotoUrl(matchDto.getTeam1PhotoUrl());
+        scoreCard.setTeam2PhotoUrl(matchDto.getTeam2PhotoUrl());
+        //Integer team1Score = 0;
+        //Integer team2Score = 0;
+        for (MatchStats stats : matchStats) {
+            if(stats.getTeamName().equals(matchDto.getTeam1Name())){
+                String name = userRepository.findById(stats.getPlayerId())
+                        .orElseThrow(() -> new NotfoundException("User not found with id: " + stats.getPlayerId()))
+                        .getName();
+                //team1Score = team1Score+ stats.getTacklePoints() + stats.getRaidPoints();
+                TeamStats teamStats = TeamStats.builder()
+                        .playerId(stats.getPlayerId())
+                        .playerName(name)
+                        .raidPoints(stats.getRaidPoints())
+                        .tacklePoints(stats.getTacklePoints())
+                        .build();
+                team1Stats.add(teamStats);
+            }
+            else if(stats.getTeamName().equals(matchDto.getTeam2Name())) {
+                String name = userRepository.findById(stats.getPlayerId())
+                        .orElseThrow(() -> new NotfoundException("User not found with id: " + stats.getPlayerId()))
+                        .getName();
+                //team2Score = team2Score + stats.getRaidPoints() + stats.getTacklePoints();
+
+                TeamStats teamStats = TeamStats.builder()
+                        .playerId(stats.getPlayerId())
+                        .playerName(name)
+                        .raidPoints(stats.getRaidPoints())
+                        .tacklePoints(stats.getTacklePoints())
+                        .build();
+                team2Stats.add(teamStats);
+            }
         }
-
-        LiveScorerCard liveScorerCard = new LiveScorerCard();
-        liveScorerCard.setMatchId(match.getId());
-        liveScorerCard.setMatchName(match.getMatchName());
-        liveScorerCard.setTeam1Name(match.getTeam1Name());
-        liveScorerCard.setTeam2Name(match.getTeam2Name());
-        liveScorerCard.setTeam1PhotoUrl(match.getTeam1PhotoUrl());
-        liveScorerCard.setTeam2PhotoUrl(match.getTeam2PhotoUrl());
-        liveScorerCard.setTeam1Score(match.getTeam1Score());
-        liveScorerCard.setTeam2Score(match.getTeam2Score());
-        liveScorerCard.setMatchStatus(match.getStatus());
-        liveScorerCard.setLocation(match.getLocation());
-        liveScorerCard.setCreatedBy(match.getCreatedBy());
-        liveScorerCard.setRemainingTime(match.getRemainingDuration());
-        List<PlayerResponse> team1Players = getTeamPlayersForMatch(matchId,match.getTeam1Name());
-        List<PlayerResponse> team2Players = getTeamPlayersForMatch(matchId,match.getTeam2Name());
-        liveScorerCard.setTeam1Players(team1Players);
-        liveScorerCard.setTeam2Players(team2Players);
-        return liveScorerCard;
-
+        scoreCard.setTeam1(team1Stats);
+        scoreCard.setTeam2(team2Stats);
+        scoreCard.setTeam1Score(matchDto.getTeam1Score());
+        scoreCard.setTeam2Score(matchDto.getTeam2Score());
+        log.info("Team 1 score is {}", scoreCard.getTeam1Score());
+        log.info("Team 2 score is {}", scoreCard.getTeam2Score());
+        log.info("scoreCards: {}", scoreCard);
+        return scoreCard;
     }
     public List<PlayerResponse> getTeamPlayersForMatch(String matchId, String teamName) {
         List<MatchStats> matchStats = matchStatsRepository.findByMatchIdAndTeamNameIgnoreCase(matchId,teamName);

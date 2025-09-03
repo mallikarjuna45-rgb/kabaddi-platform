@@ -37,7 +37,7 @@ public class UserService {
     private final MatchService matchService;
 
     private final PasswordEncoder passwordEncoder;
-    private final MatchRepository matchRepository;
+
 
     public UserDto createUser(RequestUserDto requestUserDto) {
         try {

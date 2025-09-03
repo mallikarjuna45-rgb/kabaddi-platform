@@ -19,6 +19,10 @@ public class ScoreCard {
     private String matchName;
     private String team1Name;
     private String team2Name;
+    private String team1PhotoUrl;
+    private String team2PhotoUrl;
+    private Integer team1Score;
+    private Integer team2Score;
     private String location;
     private LocalDate createdAt;
     private String createdBy;
@@ -27,4 +31,5 @@ public class ScoreCard {
     private Integer remainingDuration;
     private List<TeamStats> team1;
     private List<TeamStats> team2;
+    private String liveCommentary;
 }

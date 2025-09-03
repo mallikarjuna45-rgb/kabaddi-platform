@@ -20,12 +20,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("Loading UserDetails for {}", username);
+        //log.info("Loading UserDetails for {}", username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
         // Build and return your custom UserPrinciple
-        log.info(user.toString());
+      //  log.info(user.toString());
         return UserPrinciple.build(user);
     }
 }

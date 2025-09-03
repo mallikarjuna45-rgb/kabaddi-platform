@@ -31,7 +31,7 @@ public class AuthController {
     public ResponseEntity<UserDto> registerUser(
             @Valid @ModelAttribute RequestUserDto requestUserDto // Use your existing DTO
     ) {
-        log.info("Registering User: {}", requestUserDto);
+       // log.info("Registering User: {}", requestUserDto);
         UserDto userDto = userService.createUser(requestUserDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
     }
@@ -39,14 +39,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        log.info("Username : "+loginRequest.getUsername());
-        log.info("Password : "+loginRequest.getPassword());
+       // log.info("Username : "+loginRequest.getUsername());
+       // log.info("Password : "+loginRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-        log.info("Authentication ok");
+      //  log.info("Authentication ok");
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
-        log.info("JWT generated");
+       // log.info("JWT generated");
         UserPrinciple userPrincipal = (UserPrinciple) authentication.getPrincipal();
         // Fetch the full User entity to get the URL
         User user = userService.findByUsername(userPrincipal.getUsername());

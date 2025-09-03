@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MatchDto {
+public class
+MatchDto {
     private String id;
 
     private String matchName;
