@@ -1,6 +1,7 @@
 package com.kabaddi.kabaddi.config;
 import lombok.RequiredArgsConstructor;
 import org.apache.catalina.realm.JNDIRealm;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -22,6 +23,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker // Enables WebSocket message handling, backed by a message broker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtUtils jwtUtils;
+    @Value("${frontend.url}")
+    private String frontendUrl;
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // This line enables a simple in-memory message broker
@@ -39,7 +42,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // This registers the "/ws" endpoint, enabling SockJS fallback options.
         // SockJS is used when the browser does not support WebSockets directly.
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns(frontendUrl)
                 // Use setAllowedOriginPatterns for Spring Boot 3+
                 .withSockJS();
     }

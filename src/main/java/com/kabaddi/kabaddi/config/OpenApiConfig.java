@@ -25,10 +25,7 @@ import org.springframework.context.annotation.Configuration;
                         name = "Apache 2.0",
                         url = "http://www.apache.org/licenses/LICENSE-2.0.html"
                 )
-        ),
-        servers = {
-                @Server(url = "http://localhost:8080", description = "Local Development Server")
-        }
+        )
 )
 public class OpenApiConfig {
 

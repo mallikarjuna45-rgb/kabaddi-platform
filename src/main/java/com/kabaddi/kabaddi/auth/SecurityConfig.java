@@ -1,4 +1,5 @@
 package com.kabaddi.kabaddi.auth;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -53,13 +54,15 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     // New Bean for CORS Configuration Source
     // This explicitly defines the CORS rules for Spring Security to use
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));// frontend URL
+        configuration.setAllowedOrigins(List.of(frontendUrl));// frontend URL
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // important for cookies, authorization headers with credentials
@@ -81,7 +84,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         // Allow Swagger UI and API docs
                         .requestMatchers(
-                                "commentary/match/{matchId}",
+                                "/commentary/match/{matchId}",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
