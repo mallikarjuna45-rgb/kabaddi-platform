@@ -10,9 +10,12 @@ Check out the deployed application: [Kabaddi Platform Live Demo](https://kabach-
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Spring Boot, Java, MongoDB
+- **Backend:** Spring Boot, Java, MongoDB  
+  _Deployed on [Render](https://render.com/)_
+- **Database:** MongoDB Atlas
 - **Authentication & Security:** Spring Security, JWT (JSON Web Token)
-- **Frontend:** React
+- **Frontend:** React  
+  _Deployed on [Netlify](https://www.netlify.com/)_
 - **Real-time Communication:** WebSocket, STOMP
 - **DevOps:** Docker (`kabaddi1:latest` image)
 
@@ -28,7 +31,7 @@ Image name: `kabaddi1:latest`
 ## 📚 API Documentation
 
 - **OpenAPI Spec:** [OAS 3.1](https://kabaddi1-latest.onrender.com/v3/api-docs)
-- **Explore:** `/v3/api-docs` for full API docs.
+- **Swagger UI:** [API Documentation](https://kabaddi1-latest.onrender.com/swagger-ui/index.html)
 
 #### Contact: Sajjarao Mallikarjuna
 #### License: Apache 2.0
@@ -40,19 +43,19 @@ Server: [https://kabaddi1-latest.onrender.com](https://kabaddi1-latest.onrender.
 ## ✨ Features
 
 1. **Public Viewing:**
-    - Any user, including non-logged-in users, can view matches, player stats, and live scores.
+   - Any user, including non-logged-in users, can view matches, player stats, and live scores.
 
 2. **Authenticated Actions:**
-    - Only logged-in users (account holders) can create matches and participate in matches.
+   - Only logged-in users (account holders) can create matches and participate in matches.
 
 3. **Match Control:**
-    - Only the match creator can update match status and scores.
+   - Only the match creator can update match status and scores.
 
 4. **Real-Time Updates:**
-    - Live scores and stats update instantly without page refresh.
+   - Live scores and stats update instantly without page refresh.
 
 5. **Live Commentary:**
-    - Real-time match commentary is available during matches.
+   - Real-time match commentary is available during matches.
 
 ---
 
@@ -123,621 +126,43 @@ Authentication is implemented using **Spring Security** and **JWT**:
 
 ---
 
-## 🏃‍♂️ User Endpoints
-
-### Update User
-
-`PUT /users/user/update/{userId}`
-
-**Request Example:**
-```json
-{
-  "name": "string",
-  "username": "string",
-  "password": "string",
-  "image": "string",
-  "phone": "6369198028",
-  "location": "string",
-  "about": "string",
-  "height": 300,
-  "weight": 0.1,
-  "age": 0
-}
-```
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "name": "string",
-  "username": "string",
-  "password": "string",
-  "url": "string",
-  "location": "string",
-  "about": "string",
-  "height": 0.1,
-  "weight": 0.1,
-  "phone": "string",
-  "age": 0,
-  "createdAt": "2025-09-05"
-}
-```
-
----
-
-### Get User Details
-
-`GET /users/userdetails/{userId}`
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "name": "string",
-  "username": "string",
-  "password": "string",
-  "url": "string",
-  "location": "string",
-  "about": "string",
-  "height": 0.1,
-  "weight": 0.1,
-  "phone": "string",
-  "age": 0,
-  "createdAt": "2025-09-05"
-}
-```
-
----
-
-### Get Basic User
-
-`GET /users/user/{userId}`
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "name": "string",
-  "username": "string",
-  "password": "string",
-  "url": "string",
-  "location": "string",
-  "about": "string",
-  "height": 0.1,
-  "weight": 0.1,
-  "phone": "string",
-  "age": 0,
-  "createdAt": "2025-09-05"
-}
-```
-
----
-
-### Get Played Matches
-
-`GET /users/user/{userId}/played-matches`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### Get Created Matches
-
-`GET /users/user/{userId}/created-matches`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### Get Player Profile & Stats
-
-`GET /users/user/{playerId}/profile`
-
-**Response Example:**
-```json
-{
-  "userId": "string",
-  "raidPoints": 0,
-  "totalPoints": 0,
-  "tacklePoints": 0,
-  "totalMatches": 0,
-  "debutMatch": "2025-09-05",
-  "matches": [
-    {
-      "matchId": "string",
-      "oppositeTeamName": "string",
-      "location": "string",
-      "matchDate": "2025-09-05",
-      "team1Score": 0,
-      "team2Score": 0,
-      "totalPoints": 0,
-      "raidPoints": 0,
-      "tacklePoints": 0
-    }
-  ]
-}
-```
-
----
-
-### List All Users
-
-`GET /users/all`
-
-**Response Example:**
-```json
-[
-  {
-    "playerName": "string",
-    "playerId": "string"
-  }
-]
-```
-
----
-
-### Delete User
-
-`DELETE /users/user/delete/{userId}`
-
-**Response Example:**
-```json
-"User deleted successfully"
-```
-
----
-
-## 🏆 Match Stats Endpoints
-
-### Update Match Stats
-
-`PUT /matchstats/match/{matchId}/update/{createrId}`
-
-**Request Example:**
-```json
-{
-  "teamName": "string",
-  "playerId": "string",
-  "pointType": "RAID_POINT",
-  "points": 0
-}
-```
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "status": "UPCOMING",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "totalDuration": 0,
-  "remainingDuration": 0,
-  "creatorName": "string",
-  "location": "string"
-}
-```
-
----
-
-### Get Scorecard
-
-`GET /matchstats/match/scorecard/{matchId}`
-
-**Response Example:**
-```json
-{
-  "matchId": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "location": "string",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "creatorName": "string",
-  "status": "UPCOMING",
-  "remainingDuration": 0,
-  "team1": [
-    {
-      "playerId": "string",
-      "playerName": "string",
-      "raidPoints": 0,
-      "tacklePoints": 0
-    }
-  ],
-  "team2": [
-    {
-      "playerId": "string",
-      "playerName": "string",
-      "raidPoints": 0,
-      "tacklePoints": 0
-    }
-  ],
-  "liveCommentary": "string"
-}
-```
-
----
-
-### Get Live Scorecard
-
-`GET /matchstats/match/livescorecard/{matchId}/user`
-
-**Response Example:**
-```json
-{
-  "matchId": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "location": "string",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "creatorName": "string",
-  "status": "UPCOMING",
-  "remainingDuration": 0,
-  "team1": [
-    {
-      "playerId": "string",
-      "playerName": "string",
-      "raidPoints": 0,
-      "tacklePoints": 0
-    }
-  ],
-  "team2": [
-    {
-      "playerId": "string",
-      "playerName": "string",
-      "raidPoints": 0,
-      "tacklePoints": 0
-    }
-  ],
-  "liveCommentary": "string"
-}
-```
-
----
-
-## 🏟️ Match Management Endpoints
-
-### Create Match
-
-`POST /matches/create`
-
-**Request Example:**
-```json
-{
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Photo": "string",
-  "team2Photo": "string",
-  "createdBy": "string",
-  "team1Players": [
-    "string"
-  ],
-  "team2Players": [
-    "string"
-  ],
-  "matchDate": "2025-09-05",
-  "totalDuration": 4,
-  "location": "string"
-}
-```
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "status": "UPCOMING",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "totalDuration": 0,
-  "remainingDuration": 0,
-  "creatorName": "string",
-  "location": "string"
-}
-```
-
----
-
-### Update Match
-
-`PUT /matches/match/update/{matchId}/{createrId}`
-
-**Request Example:**
-```json
-{
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Photo": "string",
-  "team2Photo": "string",
-  "createdBy": "string",
-  "team1Players": [
-    "string"
-  ],
-  "team2Players": [
-    "string"
-  ],
-  "matchDate": "2025-09-05",
-  "totalDuration": 4,
-  "location": "string"
-}
-```
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "status": "UPCOMING",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "totalDuration": 0,
-  "remainingDuration": 0,
-  "creatorName": "string",
-  "location": "string"
-}
-```
-
----
-
-### Set Match Type
-
-`PUT /matches/match/{setType}/{matchId}/{createrId}`
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "status": "UPCOMING",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "totalDuration": 0,
-  "remainingDuration": 0,
-  "creatorName": "string",
-  "location": "string"
-}
-```
-
----
-
-### Search Matches
-
-`GET /matches/search?matchName={name}`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### Get Match
-
-`GET /matches/match/{matchId}`
-
-**Response Example:**
-```json
-{
-  "id": "string",
-  "matchName": "string",
-  "team1Name": "string",
-  "team2Name": "string",
-  "team1Score": 0,
-  "team2Score": 0,
-  "team1PhotoUrl": "string",
-  "team2PhotoUrl": "string",
-  "status": "UPCOMING",
-  "createdAt": "2025-09-05",
-  "createdBy": "string",
-  "totalDuration": 0,
-  "remainingDuration": 0,
-  "creatorName": "string",
-  "location": "string"
-}
-```
-
----
-
-### List Live Matches
-
-`GET /matches/live`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### List Completed Matches
-
-`GET /matches/completed`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### List All Matches
-
-`GET /matches/all`
-
-**Response Example:**
-```json
-[
-  {
-    "id": "string",
-    "matchName": "string",
-    "team1Name": "string",
-    "team2Name": "string",
-    "team1Score": 0,
-    "team2Score": 0,
-    "team1PhotoUrl": "string",
-    "team2PhotoUrl": "string",
-    "status": "UPCOMING",
-    "createdAt": "2025-09-05",
-    "createdBy": "string",
-    "totalDuration": 0,
-    "remainingDuration": 0,
-    "creatorName": "string",
-    "location": "string"
-  }
-]
-```
-
----
-
-### Delete Match
-
-`DELETE /matches/delete/{matchId}`
-
-**Response Example:**
-```json
-"Match deleted successfully"
-```
-
----
-
-## 🎙️ Commentary Endpoint
-
-### Get Match Commentary
-
-`GET /commentary/match/{matchId}`
+## 📑 API Endpoints
+
+A reference list of all available API endpoints.  
+For detailed usage, request/response fields, and examples, see the [Swagger API Docs](https://kabaddi1-latest.onrender.com/swagger-ui/index.html).
+
+### Authentication
+- `POST /auth/register`
+- `POST /auth/login`
+
+### User Management
+- `PUT /users/user/update/{userId}`
+- `GET /users/userdetails/{userId}`
+- `GET /users/user/{userId}`
+- `GET /users/user/{userId}/played-matches`
+- `GET /users/user/{userId}/created-matches`
+- `GET /users/user/{playerId}/profile`
+- `GET /users/all`
+- `DELETE /users/user/delete/{userId}`
+
+### Match Stats
+- `PUT /matchstats/match/{matchId}/update/{createrId}`
+- `GET /matchstats/match/scorecard/{matchId}`
+- `GET /matchstats/match/livescorecard/{matchId}/user`
+
+### Match Management
+- `POST /matches/create`
+- `PUT /matches/match/update/{matchId}/{createrId}`
+- `PUT /matches/match/{setType}/{matchId}/{createrId}`
+- `GET /matches/search?matchName={name}`
+- `GET /matches/match/{matchId}`
+- `GET /matches/live`
+- `GET /matches/completed`
+- `GET /matches/all`
+- `DELETE /matches/delete/{matchId}`
+
+### Commentary
+- `GET /commentary/match/{matchId}`
 
 ---
 
