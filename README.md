@@ -747,11 +747,9 @@ Commonly used request and response schemas:
 - UserDto
 - MatchDto
 - CreateMatchRequest
-- UpdateScoreDto
 - PlayerResponse
 - ScoreCard
 - Commentary
-- JwtResponse
 
 ---
 
